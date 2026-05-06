@@ -33,7 +33,7 @@
       var url = "https://app.arkivia.se?matter=" + encodeURIComponent(matter.trim());
       console.log('[iManage] Redirecting to:', url);
 
-      window.top.location.href = url;
+      window.location.href = url;
 
     }).catch(function (err) {
       console.error('[iManage] imanage.ready() failed:', err);
