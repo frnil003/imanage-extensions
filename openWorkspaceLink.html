@@ -19,10 +19,11 @@
 
       // Debug — remove once you find the right field
       console.log('[iManage] Selected item:', item);
-      console.table(item);
+       console.log('link:', item.uri);
+
 
       // Fetch full workspace metadata from the API
-      fetch('https://workdemo.cloud.advania.se/work/api/v2/workspaces/' + item.database + '/' + item.id, {
+      fetch(item.uri, {
         headers: { 'X-Auth-Token': context.token }
       })
       .then(function (r) { return r.json(); })
