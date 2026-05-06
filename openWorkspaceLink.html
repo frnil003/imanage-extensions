@@ -56,10 +56,17 @@
   console.log('[iManage] Selected item:', item);
   console.log('[iManage] All keys:', Object.keys(item));
   console.table(item); 
-  if (!matter || !matter.trim()) {
-    imanage.cancel();
-    return;
-  }
+
+  fetch('/work/api/v2/workspaces/' + item.database + '/' + item.id, {
+    headers: { 'X-Auth-Token': context.token }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var matter = data.data.matter; // or whichever field
+    var url = "https://app.arkivia.se?matter=" + encodeURIComponent(matter);
+
+     console.table(url); 
+  
 
   // This tab IS your page — just navigate it directly, no window.top needed
   window.location.href = "https://app.arkivia.se?matter=" + encodeURIComponent(matter.trim());
