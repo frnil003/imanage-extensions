@@ -81,7 +81,8 @@
       // ── Perform the redirect ──────────────────────────────────────────────
       if (OPEN_IN_NEW_TAB) {
         // Open the external URL in a new browser tab, leave iManage intact.
-        window.open(url, '_blank', 'noopener,noreferrer');
+         window.top.open(url, '_blank', 'noopener,noreferrer');
+
 
         // Close the hidden iframe cleanly.
         imanage.cancel();
