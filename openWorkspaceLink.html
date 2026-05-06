@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"> 
-  <script src="https://workdemo.cloud.advania.se/js/imanageApi.js"></script>
+  <script src="https://imanage.ludvig.se/js/imanageApi.js"></script>
 </head>
 <body>
 <script>
@@ -23,7 +23,7 @@
 
 
       // Fetch full workspace metadata from the API
-      fetch(item.uri, {
+      fetch('https://imanage.ludvig.se'+item.uri, {
         headers: { 'X-Auth-Token': context.token }
       })
       .then(function (r) { return r.json(); })
