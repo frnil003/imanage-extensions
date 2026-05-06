@@ -22,7 +22,7 @@
       console.table(item);
 
       // Fetch full workspace metadata from the API
-      fetch('/work/api/v2/workspaces/' + item.database + '/' + item.id, {
+      fetch('https://workdemo.cloud.advania.se/work/api/v2/workspaces/' + item.database + '/' + item.id, {
         headers: { 'X-Auth-Token': context.token }
       })
       .then(function (r) { return r.json(); })
