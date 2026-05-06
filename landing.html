@@ -218,7 +218,9 @@
       + '/' + encodeURIComponent(database)
       + '/workspaces/'
       + encodeURIComponent(workspaceId);
-
+  console.log(API_PATH);
+    console.log(apiUrl);
+     console.log(token);
     fetch(apiUrl, {
       headers: {
         'X-Auth-Token' : token,
