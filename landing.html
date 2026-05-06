@@ -91,10 +91,10 @@
 
 
   // ── Configuration ────────────────────────────────────────────────────────
-  var IMANAGE_SERVER = 'https://workdemo.cloud.advania.se';
+  var IMANAGE_SERVER = 'https://imanage.ludvig.se';
   var REDIRECT_URI   = 'https://frnil003.github.io/imanage-extensions/landing.html';
-  var LINK_FIELD     = 'custom12';
-  var ARKIVIA_BASE   = 'https://app.arkivia.se';
+  var LINK_FIELD     = 'custom12_description';
+  var ARKIVIA_BASE   = '';
   var ARKIVIA_PARAM  = 'matter';
   var API_PATH       = '/work/api/v2/customers/1/libraries';
   // ─────────────────────────────────────────────────────────────────────────
@@ -167,9 +167,7 @@
 
     setLoading('Authenticating…', 'Connecting to iManage.');
 
-    // imanage.ready() and requestAuthNonce() only work inside an iManage
-    // extension context — this runs when the page is first opened from
-    // the right-click menu (before the OAuth redirect).
+  
     imanage.ready().then(function (context) {
 
       var item     = context.selectedItems[0];
@@ -260,7 +258,7 @@
       }
 
       setLoading('Opening Arkivia…', 'Redirecting you now.');
-      window.location.href = ARKIVIA_BASE + '?' + ARKIVIA_PARAM + '=' + encodeURIComponent(matter.trim());
+      window.location.href = matter.trim();
     })
     .catch(function (err) {
       console.error('[Arkivia] Fetch error:', err);
