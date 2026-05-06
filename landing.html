@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arkivia – Opening…</title>
+
+  <!-- iManage SDK — needed for imanage.ready() and requestAuthNonce() -->
+  <script src="https://imanage.ludvig.se/js/imanageApi.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #333;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      padding: 40px;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+    }
+    .logo { font-size: 22px; font-weight: 600; color: #0078D4; margin-bottom: 24px; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #0078D4;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status { font-size: 15px; color: #555; line-height: 1.5; }
+    .status strong { color: #333; display: block; font-size: 17px; margin-bottom: 6px; }
+    .error-icon { width: 48px; height: 48px; margin: 0 auto 20px; }
+    .error-title { font-size: 17px; font-weight: 600; color: #c00; margin-bottom: 8px; }
+    .error-detail { font-size: 14px; color: #666; margin-bottom: 6px; }
+    .error-hint { font-size: 13px; color: #999; margin-bottom: 24px; }
+    .btn {
+      display: inline-block; padding: 9px 22px;
+      background: #0078D4; color: white;
+      border: none; border-radius: 4px;
+      cursor: pointer; font-size: 14px;
+    }
+    .btn:hover { background: #005fa3; }
+    .btn-ghost {
+      background: none; color: #0078D4;
+      border: 1px solid #0078D4; margin-left: 8px;
+    }
+    .btn-ghost:hover { background: #f0f7ff; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <div id="state-loading">
+    <div class="logo">Arkivia</div>
+    <div class="spinner"></div>
+    <div class="status">
+      <strong id="loading-title">Connecting…</strong>
+      <span id="loading-detail">Please wait.</span>
+    </div>
+  </div>
+
+  <div id="state-error" style="display:none;">
+    <svg class="error-icon" viewBox="0 0 24 24" fill="none"
+         stroke="#cc0000" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <div class="error-title" id="error-title">Something went wrong</div>
+    <div class="error-detail" id="error-detail"></div>
+    <div class="error-hint" id="error-hint"></div>
+    <button class="btn" onclick="window.close()">Close</button>
+    <button class="btn btn-ghost" onclick="location.reload()">Retry</button>
+  </div>
+
+</div>
+<script>
+(function () {
+  'use strict';
+
+  // ── Configuration ────────────────────────────────────────────────────────
+  var IMANAGE_SERVER = 'https://imanage.ludvig.se';
+  var REDIRECT_URI   = 'https://frnil003.github.io/imanage-extensions/landing.html';
+  var LINK_FIELD     = 'custom12';
+  var ARKIVIA_BASE   = 'https://app.arkivia.se';
+  var ARKIVIA_PARAM  = 'matter';
+  var API_PATH       = '/work/web/api/v2/customers/1/libraries';
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── UI helpers ────────────────────────────────────────────────────────────
+  function setLoading(title, detail) {
+    document.getElementById('loading-title').textContent  = title  || '';
+    document.getElementById('loading-detail').textContent = detail || '';
+    document.getElementById('state-loading').style.display = '';
+    document.getElementById('state-error').style.display   = 'none';
+  }
+
+  function showError(title, detail, hint) {
+    document.getElementById('error-title').textContent  = title  || 'Error';
+    document.getElementById('error-detail').textContent = detail || '';
+    document.getElementById('error-hint').textContent   = hint   || '';
+    document.getElementById('state-loading').style.display = 'none';
+    document.getElementById('state-error').style.display   = '';
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── Parse URL fragment (#access_token=...&token_type=...) ─────────────────
+  function parseFragment(hash) {
+    var params = {};
+    hash.replace(/^#/, '').split('&').forEach(function (pair) {
+      var parts = pair.split('=');
+      if (parts[0]) {
+        params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || '');
+      }
+    });
+    return params;
+  }
+
+  var fragment = parseFragment(window.location.hash);
+
+  // ── PHASE 2: OAuth returned an access token in the URL fragment ───────────
+  if (fragment.access_token) {
+
+    setLoading('Looking up workspace…', 'Fetching metadata from iManage.');
+
+    // Clean the token from the address bar
+    history.replaceState(null, '', window.location.pathname);
+
+    var token       = fragment.access_token;
+    var workspaceId = sessionStorage.getItem('im_workspace_id');
+    var database    = sessionStorage.getItem('im_workspace_db');
+
+    if (!workspaceId || !database) {
+      showError(
+        'Session expired',
+        'Could not restore workspace details after login.',
+        'Close this tab and right-click the workspace again.'
+      );
+      return;
+    }
+
+    fetchAndRedirect(token, database, workspaceId);
+
+  // ── PHASE 2 error: OAuth failed ───────────────────────────────────────────
+  } else if (fragment.error) {
+
+    showError(
+      'Authentication failed',
+      'iManage returned: ' + (fragment.error_description || fragment.error),
+      'Close this tab and try again.'
+    );
+
+  // ── PHASE 1: Page opened from the iManage extension ───────────────────────
+  } else {
+
+    setLoading('Authenticating…', 'Connecting to iManage.');
+
+    // imanage.ready() and requestAuthNonce() only work inside an iManage
+    // extension context — this runs when the page is first opened from
+    // the right-click menu (before the OAuth redirect).
+    imanage.ready().then(function (context) {
+
+      var item     = context.selectedItems[0];
+      var clientId = context.config.command.client_id;
+
+      // Save workspace details to survive the OAuth redirect
+      sessionStorage.setItem('im_workspace_id', item.id);
+      sessionStorage.setItem('im_workspace_db',  item.database);
+
+      setLoading('Authenticating…', 'Requesting sign-in token.');
+
+      // Request a nonce — this bypasses the iManage login screen entirely
+      imanage.requestAuthNonce().then(function (response) {
+
+        var authUrl = IMANAGE_SERVER + '/auth/oauth2/authorize'
+          + '?response_type=token'
+          + '&client_id='    + encodeURIComponent(clientId)
+          + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
+          + '&scope=user'
+          + '&auth_nonce='   + encodeURIComponent(response.auth_nonce);
+
+        window.location.href = authUrl;
+
+      }).catch(function (err) {
+        console.error('[Arkivia] requestAuthNonce failed:', err);
+        showError(
+          'Authentication error',
+          'Could not request an authentication token from iManage.',
+          err.message || ''
+        );
+      });
+
+    }).catch(function (err) {
+      console.error('[Arkivia] imanage.ready() failed:', err);
+      showError(
+        'iManage connection failed',
+        'Could not connect to the iManage SDK.',
+        'Make sure this page is opened from the iManage right-click menu.'
+      );
+    });
+  }
+
+  // ── Fetch workspace metadata then redirect to Arkivia ─────────────────────
+  function fetchAndRedirect(token, database, workspaceId) {
+
+    var apiUrl = IMANAGE_SERVER + API_PATH
+      + '/' + encodeURIComponent(database)
+      + '/workspaces/'
+      + encodeURIComponent(workspaceId);
+
+    fetch(apiUrl, {
+      headers: {
+        'X-Auth-Token' : token,
+        'Accept'       : 'application/json'
+      }
+    })
+    .then(function (response) {
+      if (response.status === 401) {
+        showError(
+          'Session expired',
+          'Your authentication token is no longer valid.',
+          'Close this tab and right-click the workspace again.'
+        );
+        return null;
+      }
+      if (!response.ok) {
+        throw new Error('API returned HTTP ' + response.status);
+      }
+      return response.json();
+    })
+    .then(function (data) {
+      if (!data) return;
+
+      var workspace = data.data;
+      var matter    = workspace[LINK_FIELD];
+
+      console.log('[Arkivia] Workspace:', workspace);
+
+      if (!matter || !matter.trim()) {
+        showError(
+          'No Arkivia link configured',
+          'Workspace "' + (workspace.name || workspaceId) + '" does not have an Arkivia matter number set.',
+          'Ask your administrator to populate field: ' + LINK_FIELD
+        );
+        return;
+      }
+
+      setLoading('Opening Arkivia…', 'Redirecting you now.');
+      window.location.href = ARKIVIA_BASE + '?' + ARKIVIA_PARAM + '=' + encodeURIComponent(matter.trim());
+    })
+    .catch(function (err) {
+      console.error('[Arkivia] Fetch error:', err);
+      showError(
+        'Could not fetch workspace data',
+        err.message || 'An unexpected error occurred.',
+        'Close this tab and try again.'
+      );
+    });
+  }
+
+}());
+</script>
+</body>
+</html>
