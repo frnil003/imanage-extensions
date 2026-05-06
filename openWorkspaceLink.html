@@ -51,7 +51,11 @@
  imanage.ready().then(function (context) {
   var workspace = context.selectedItems[0];
   var matter = workspace[LINK_FIELD];
-
+ var item = context.selectedItems[0];
+  console.log('[iManage] Full context:', context);
+  console.log('[iManage] Selected item:', item);
+  console.log('[iManage] All keys:', Object.keys(item));
+  console.table(item); 
   if (!matter || !matter.trim()) {
     imanage.cancel();
     return;
