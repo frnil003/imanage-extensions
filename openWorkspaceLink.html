@@ -2,33 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!--
-    openWorkspaceLink.html
-    ========================
-    This is the hidden extension page loaded by iManage in a concealed iframe
-    (type: hiddenIframe in the YAML). There is no visible UI — the page exists
-    only to run the script below.
-
-    Flow:
-      1. iManage loads this page silently in a hidden iframe.
-      2. imanage.ready() receives the context of the right-clicked workspace.
-      3. The script reads the URL stored in the workspace's custom field.
-      4. It redirects the top-level browser window to that URL.
-         — Use window.top.location.href  to navigate in the same tab (default).
-         — Use window.open(url, '_blank') to open in a new tab instead.
-
-    Hosting:
-      Host this file on a server accessible by the iManage Work users.
-      Update the src below to match your iManage Work Server domain.
-
-    Configuration:
-      Change LINK_FIELD to whichever custom field stores the external URL.
-      The workspace object exposes: custom1 … custom29 (and their _description
-      counterparts). The field must be visible in the grid view or fetched via
-      the Universal API for it to appear in the SDK context object.
-  -->
-
-  <!-- Load the iManage JavaScript library from YOUR iManage Work Server -->
   <script src="https://workdemo.cloud.advania.se/js/imanageApi.js"></script>
 </head>
 <body>
@@ -36,45 +9,52 @@
 (function () {
   'use strict';
 
-  // ─── Configuration ──────────────────────────────────────────────────────────
-  // The workspace custom field that holds the external URL.
-  // Common values: 'custom1', 'custom2', … 'custom29'
   var LINK_FIELD = 'custom12';
-
-  // Set to true  → open the URL in a new browser tab (keeps iManage open).
-  // Set to false → navigate the current tab to the URL.
-  var OPEN_IN_NEW_TAB = true;
-  // ─────────────────────────────────────────────────────────────────────────────
 
   window.addEventListener('load', function () {
 
- imanage.ready().then(function (context) {
-  var workspace = context.selectedItems[0];
-  var matter = workspace[LINK_FIELD];
- var item = context.selectedItems[0];
-  console.log('[iManage] Full context:', context);
-  console.log('[iManage] Selected item:', item);
-  console.log('[iManage] All keys:', Object.keys(item));
-  console.table(item); 
+    imanage.ready().then(function (context) {
 
+      var item = context.selectedItems[0];
 
+      // Debug — remove once you find the right field
+      console.log('[iManage] Selected item:', item);
+      console.table(item);
 
-  // Fall back to API fetch if matter field is missing
-  fetch('/work/api/v2/workspaces/' + item.database + '/' + item.id, {
-    headers: { 'X-Auth-Token': context.token }
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    var matter = data.data.matter; // or whichever field
-    var url = "https://app.arkivia.se?matter=" + encodeURIComponent(matter);
-    console.table(url); 
-  });
- 
-  
+      // Fetch full workspace metadata from the API
+      fetch('/work/api/v2/workspaces/' + item.database + '/' + item.id, {
+        headers: { 'X-Auth-Token': context.token }
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
 
-  // This tab IS your page — just navigate it directly, no window.top needed
-  window.location.href = "https://app.arkivia.se?matter=" + encodeURIComponent(matter.trim());
-});
+        // Debug — log the full API response
+        console.log('[iManage] API response:', data);
+        console.table(data.data);
+
+        var matter = data.data[LINK_FIELD];
+
+        if (!matter || !matter.trim()) {
+          console.warn('[iManage] Field "' + LINK_FIELD + '" is empty or missing');
+          imanage.cancel();
+          return;
+        }
+
+        var url = "https://app.arkivia.se?matter=" + encodeURIComponent(matter.trim());
+        console.log('[iManage] Redirecting to:', url);
+
+        window.top.location.href = url;
+
+      })
+      .catch(function (err) {
+        console.error('[iManage] API fetch failed:', err);
+        imanage.cancel();
+      });
+
+    }).catch(function (err) {
+      console.error('[iManage] imanage.ready() failed:', err);
+      imanage.cancel();
+    });
 
   });
 
