@@ -2,43 +2,103 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <script src="https://IMANAGE_SERVER/js/imanageApi.js"></script>
+  <!--
+    openWorkspaceLink.html
+    ========================
+    This is the hidden extension page loaded by iManage in a concealed iframe
+    (type: hiddenIframe in the YAML). There is no visible UI — the page exists
+    only to run the script below.
+
+    Flow:
+      1. iManage loads this page silently in a hidden iframe.
+      2. imanage.ready() receives the context of the right-clicked workspace.
+      3. The script reads the URL stored in the workspace's custom field.
+      4. It redirects the top-level browser window to that URL.
+         — Use window.top.location.href  to navigate in the same tab (default).
+         — Use window.open(url, '_blank') to open in a new tab instead.
+
+    Hosting:
+      Host this file on a server accessible by the iManage Work users.
+      Update the src below to match your iManage Work Server domain.
+
+    Configuration:
+      Change LINK_FIELD to whichever custom field stores the external URL.
+      The workspace object exposes: custom1 … custom29 (and their _description
+      counterparts). The field must be visible in the grid view or fetched via
+      the Universal API for it to appear in the SDK context object.
+  -->
+
+  <!-- Load the iManage JavaScript library from YOUR iManage Work Server -->
+  <script src="https://YOUR_IMANAGE_SERVER/js/imanageApi.js"></script>
 </head>
 <body>
-  loading...
 <script>
-(function () {.{Azure,bash_history,c{isco,laude{,.json}},dotnet,gitconfig,ms-ad,nuget,templateengine,vscode{,-shared}},AppData,Co{ntacts,okies},Do{cuments,wnloads},Favorites,L{inks,okala\ inställningar},M{allar,ina\ dokument,usic},N{TUSER.DAT{,\{b384d980-205e-11f1-9969-e41fd51285ad\}.TM{.blf,Container0000000000000000000{1.regtrans-ms,2.regtrans-ms}}},ätverket},OneDrive{,\ -\ Advania},P{SAppDeployToolkit,rogramdata},Recent,S{aved\ Games,e{arches,ndTo},krivare,tart-meny},Videos,imanage-extensions,ntuser.{dat.LOG{1,2},ini},source} 
+(function () {
   'use strict';
 
-  var LINK_FIELD = 'custom1';
-  var OPEN_IN_NEW_TAB = false;
+  // ─── Configuration ──────────────────────────────────────────────────────────
+  // The workspace custom field that holds the external URL.
+  // Common values: 'custom1', 'custom2', … 'custom29'
+  var LINK_FIELD = 'custom2';
 
-  window.addEventListener('load', function () {.{Azure,bash_history,c{isco,laude{,.json}},dotnet,gitconfig,ms-ad,nuget,templateengine,vscode{,-shared}},AppData,Co{ntacts,okies},Do{cuments,wnloads},Favorites,L{inks,okala\ inställningar},M{allar,ina\ dokument,usic},N{TUSER.DAT{,\{b384d980-205e-11f1-9969-e41fd51285ad\}.TM{.blf,Container0000000000000000000{1.regtrans-ms,2.regtrans-ms}}},ätverket},OneDrive{,\ -\ Advania},P{SAppDeployToolkit,rogramdata},Recent,S{aved\ Games,e{arches,ndTo},krivare,tart-meny},Videos,imanage-extensions,ntuser.{dat.LOG{1,2},ini},source} 
-    imanage.ready().then(function (context) {.{Azure,bash_history,c{isco,laude{,.json}},dotnet,gitconfig,ms-ad,nuget,templateengine,vscode{,-shared}},AppData,Co{ntacts,okies},Do{cuments,wnloads},Favorites,L{inks,okala\ inställningar},M{allar,ina\ dokument,usic},N{TUSER.DAT{,\{b384d980-205e-11f1-9969-e41fd51285ad\}.TM{.blf,Container0000000000000000000{1.regtrans-ms,2.regtrans-ms}}},ätverket},OneDrive{,\ -\ Advania},P{SAppDeployToolkit,rogramdata},Recent,S{aved\ Games,e{arches,ndTo},krivare,tart-meny},Videos,imanage-extensions,ntuser.{dat.LOG{1,2},ini},source} 
-      if (!context.selectedItems  context.selectedItems.length === 0) {.{Azure,bash_history,c{isco,laude{,.json}},dotnet,gitconfig,ms-ad,nuget,templateengine,vscode{,-shared}},AppData,Co{ntacts,okies},Do{cuments,wnloads},Favorites,L{inks,okala\ inställningar},M{allar,ina\ dokument,usic},N{TUSER.DAT{,\{b384d980-205e-11f1-9969-e41fd51285ad\}.TM{.blf,Container0000000000000000000{1.regtrans-ms,2.regtrans-ms}}},ätverket},OneDrive{,\ -\ Advania},P{SAppDeployToolkit,rogramdata},Recent,S{aved\ Games,e{arches,ndTo},krivare,tart-meny},Videos,imanage-extensions,ntuser.{dat.LOG{1,2},ini},source} 
+  // Set to true  → open the URL in a new browser tab (keeps iManage open).
+  // Set to false → navigate the current tab to the URL.
+  var OPEN_IN_NEW_TAB = true;
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  window.addEventListener('load', function () {
+
+    imanage.ready().then(function (context) {
+
+      // Guard: ensure at least one item was selected
+      if (!context.selectedItems || context.selectedItems.length === 0) {
         imanage.cancel();
         return;
-      
-      var workspace = context.selectedItemsINK_FIELD url.trim().length === 0) {.{Azure,bash_history,c{isco,laude{,.json}},dotnet,gitconfig,ms-ad,nuget,templateengine,vscode{,-shared}},AppData,Co{ntacts,okies},Do{cuments,wnloads},Favorites,L{inks,okala\ inställningar},M{allar,ina\ dokument,usic},N{TUSER.DAT{,\{b384d980-205e-11f1-9969-e41fd51285ad\}.TM{.blf,Container0000000000000000000{1.regtrans-ms,2.regtrans-ms}}},ätverket},OneDrive{,\ -\ Advania},P{SAppDeployToolkit,rogramdata},Recent,S{aved\ Games,e{arches,ndTo},krivare,tart-meny},Videos,imanage-extensions,ntuser.{dat.LOG{1,2},ini},source} 
+      }
+
+      var workspace = context.selectedItems[0];
+
+      // Read the URL from the configured custom field
+      var url = workspace[LINK_FIELD];
+
+      // Validate: must be a non-empty string beginning with http(s)://
+      if (typeof url !== 'string' || url.trim().length === 0) {
+        console.warn('[openWorkspaceLink] No URL found in field "' + LINK_FIELD +
+          '" for workspace: ' + workspace.name);
         imanage.cancel();
         return;
-      
+      }
+
       url = url.trim();
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {.{Azure,bash_history,c{isco,laude{,.json}},dotnet,gitconfig,ms-ad,nuget,templateengine,vscode{,-shared}},AppData,Co{ntacts,okies},Do{cuments,wnloads},Favorites,L{inks,okala\ inställningar},M{allar,ina\ dokument,usic},N{TUSER.DAT{,\{b384d980-205e-11f1-9969-e41fd51285ad\}.TM{.blf,Container0000000000000000000{1.regtrans-ms,2.regtrans-ms}}},ätverket},OneDrive{,\ -\ Advania},P{SAppDeployToolkit,rogramdata},Recent,S{aved\ Games,e{arches,ndTo},krivare,tart-meny},Videos,imanage-extensions,ntuser.{dat.LOG{1,2},ini},source} 
+
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        console.warn('[openWorkspaceLink] Field "' + LINK_FIELD +
+          '" does not contain a valid http(s) URL: ' + url);
         imanage.cancel();
         return;
-      
-      if (OPEN_IN_NEW_TAB) {.{Azure,bash_history,c{isco,laude{,.json}},dotnet,gitconfig,ms-ad,nuget,templateengine,vscode{,-shared}},AppData,Co{ntacts,okies},Do{cuments,wnloads},Favorites,L{inks,okala\ inställningar},M{allar,ina\ dokument,usic},N{TUSER.DAT{,\{b384d980-205e-11f1-9969-e41fd51285ad\}.TM{.blf,Container0000000000000000000{1.regtrans-ms,2.regtrans-ms}}},ätverket},OneDrive{,\ -\ Advania},P{SAppDeployToolkit,rogramdata},Recent,S{aved\ Games,e{arches,ndTo},krivare,tart-meny},Videos,imanage-extensions,ntuser.{dat.LOG{1,2},ini},source} 
+      }
+
+      // ── Perform the redirect ──────────────────────────────────────────────
+      if (OPEN_IN_NEW_TAB) {
+        // Open the external URL in a new browser tab, leave iManage intact.
         window.open(url, '_blank', 'noopener,noreferrer');
+
+        // Close the hidden iframe cleanly.
         imanage.cancel();
-       else {.{Azure,bash_history,c{isco,laude{,.json}},dotnet,gitconfig,ms-ad,nuget,templateengine,vscode{,-shared}},AppData,Co{ntacts,okies},Do{cuments,wnloads},Favorites,L{inks,okala\ inställningar},M{allar,ina\ dokument,usic},N{TUSER.DAT{,\{b384d980-205e-11f1-9969-e41fd51285ad\}.TM{.blf,Container0000000000000000000{1.regtrans-ms,2.regtrans-ms}}},ätverket},OneDrive{,\ -\ Advania},P{SAppDeployToolkit,rogramdata},Recent,S{aved\ Games,e{arches,ndTo},krivare,tart-meny},Videos,imanage-extensions,ntuser.{dat.LOG{1,2},ini},source} 
+      } else {
+        // Navigate the top-level window (the iManage Work tab) to the URL.
+        // The user leaves iManage and arrives directly at the external page.
         window.top.location.href = url;
-      
-    ).catch(function (err) {.{Azure,bash_history,c{isco,laude{,.json}},dotnet,gitconfig,ms-ad,nuget,templateengine,vscode{,-shared}},AppData,Co{ntacts,okies},Do{cuments,wnloads},Favorites,L{inks,okala\ inställningar},M{allar,ina\ dokument,usic},N{TUSER.DAT{,\{b384d980-205e-11f1-9969-e41fd51285ad\}.TM{.blf,Container0000000000000000000{1.regtrans-ms,2.regtrans-ms}}},ätverket},OneDrive{,\ -\ Advania},P{SAppDeployToolkit,rogramdata},Recent,S{aved\ Games,e{arches,ndTo},krivare,tart-meny},Videos,imanage-extensions,ntuser.{dat.LOG{1,2},ini},source} 
+      }
+
+    }).catch(function (err) {
+      console.error('[openWorkspaceLink] imanage.ready() failed:', err);
       imanage.cancel();
-    );
-  );
-());
+    });
+
+  });
+
+}());
 </script>
 </body>
 </html>
