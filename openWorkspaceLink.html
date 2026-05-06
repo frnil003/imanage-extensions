@@ -14,31 +14,18 @@
 
   window.addEventListener('load', function () {
 
-    imanage.ready().then(function (context) {
+ imanage.ready().then(function (context) {
+  var workspace = context.selectedItems[0];
+  var matter = workspace[LINK_FIELD];
 
-      var item = context.selectedItems[0];
+  if (!matter || !matter.trim()) {
+    imanage.cancel();
+    return;
+  }
 
-      // Debug — check what fields are available
-      console.log('[iManage] Selected item:', item);
-      console.table(item);
-
-      var matter = item[LINK_FIELD];
-
-      if (!matter || !matter.trim()) {
-        console.warn('[iManage] Field "' + LINK_FIELD + '" is empty or missing');
-        imanage.cancel();
-        return;
-      }
-
-      var url = "https://app.arkivia.se?matter=" + encodeURIComponent(matter.trim());
-      console.log('[iManage] Redirecting to:', url);
-
-      window.location.href = url;
-
-    }).catch(function (err) {
-      console.error('[iManage] imanage.ready() failed:', err);
-      imanage.cancel();
-    });
+  // This tab IS your page — just navigate it directly, no window.top needed
+  window.location.href = "https://app.arkivia.se?matter=" + encodeURIComponent(matter.trim());
+});
 
   });
 
