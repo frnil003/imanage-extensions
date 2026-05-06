@@ -17,11 +17,47 @@
  imanage.ready().then(function (context) {
   var workspace = context.selectedItems[0];
   var matter = workspace[LINK_FIELD];
-
-  if (!matter || !matter.trim()) {
-    imanage.cancel();
-    return;
-  }
+   console.log('[iManage] Selected item:', item);
+      console.table(item);
+   
+if (!matter || !matter.trim()) {
+  document.body.innerHTML = `
+    <div style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    ">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cc0000" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <h2 style="margin: 16px 0 8px;">No Arkivia link configured</h2>
+      <p style="color: #666; margin: 0;">
+        Workspace <strong>${item.name}</strong> does not have an Arkivia matter number set.
+      </p>
+      <p style="color: #999; font-size: 13px; margin-top: 8px;">
+        Contact your administrator to set the value in field: <code>custom12</code>
+      </p>
+      <button onclick="window.close()" style="
+        margin-top: 24px;
+        padding: 8px 20px;
+        background: #0078D4;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      ">Close</button>
+    </div>
+  `;
+  return;
+}
 
   // This tab IS your page — just navigate it directly, no window.top needed
   window.location.href = "https://app.arkivia.se?matter=" + encodeURIComponent(matter.trim());
