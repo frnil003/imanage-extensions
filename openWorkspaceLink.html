@@ -59,7 +59,7 @@
       var workspace = context.selectedItems[0];
 
       // Read the URL from the configured custom field
-      var url = workspace[LINK_FIELD];
+ var url = "https://app.arkivia.se?matter=" + encodeURIComponent(workspace[LINK_FIELD]);
 
       // Validate: must be a non-empty string beginning with http(s)://
       if (typeof url !== 'string' || url.trim().length === 0) {
