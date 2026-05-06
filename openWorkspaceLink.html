@@ -23,15 +23,15 @@
 
 
       // Fetch full workspace metadata from the API
-      fetch('https://imanage.ludvig.se'+item.uri, {
-        headers: { 'X-Auth-Token': context.token }
-      })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
+   //   fetch('https://imanage.ludvig.se'+item.uri, {
+   //     headers: { 'X-Auth-Token': context.token }
+  //    })
+  //    .then(function (r) { return r.json(); })
+  //    .then(function (data) {
 
         // Debug — log the full API response
-        console.log('[iManage] API response:', data);
-        console.table(data.data);
+    //    console.log('[iManage] API response:', data);
+      //  console.table(data.data);
 
         var matter = data.data[LINK_FIELD];
 
