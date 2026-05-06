@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"> 
+  <meta charset="UTF-8">
   <script src="https://imanage.ludvig.se/js/imanageApi.js"></script>
 </head>
 <body>
@@ -17,40 +17,22 @@
 
       var item = context.selectedItems[0];
 
-      // Debug — remove once you find the right field
+      // Debug — check what fields are available
       console.log('[iManage] Selected item:', item);
-       console.log('link:', item.uri);
+      console.table(item);
 
+      var matter = item[LINK_FIELD];
 
-      // Fetch full workspace metadata from the API
-   //   fetch('https://imanage.ludvig.se'+item.uri, {
-   //     headers: { 'X-Auth-Token': context.token }
-  //    })
-  //    .then(function (r) { return r.json(); })
-  //    .then(function (data) {
-
-        // Debug — log the full API response
-    //    console.log('[iManage] API response:', data);
-      //  console.table(data.data);
-
-        var matter = data.data[LINK_FIELD];
-
-        if (!matter || !matter.trim()) {
-          console.warn('[iManage] Field "' + LINK_FIELD + '" is empty or missing');
-          imanage.cancel();
-          return;
-        }
-
-        var url = "https://app.arkivia.se?matter=" + encodeURIComponent(matter.trim());
-        console.log('[iManage] Redirecting to:', url);
-
-        window.top.location.href = url;
-
-      })
-      .catch(function (err) {
-        console.error('[iManage] API fetch failed:', err);
+      if (!matter || !matter.trim()) {
+        console.warn('[iManage] Field "' + LINK_FIELD + '" is empty or missing');
         imanage.cancel();
-      });
+        return;
+      }
+
+      var url = "https://app.arkivia.se?matter=" + encodeURIComponent(matter.trim());
+      console.log('[iManage] Redirecting to:', url);
+
+      window.top.location.href = url;
 
     }).catch(function (err) {
       console.error('[iManage] imanage.ready() failed:', err);
