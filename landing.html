@@ -91,7 +91,7 @@
 
 
   // ── Configuration ────────────────────────────────────────────────────────
-  var IMANAGE_SERVER = 'https://imanage.ludvig.se';
+ // var IMANAGE_SERVER = 'https://imanage.ludvig.se';
   var REDIRECT_URI   = 'https://frnil003.github.io/imanage-extensions/landing.html';
   var LINK_FIELD     = 'custom12_description';
   var ARKIVIA_BASE   = '';
@@ -141,7 +141,7 @@
     var token       = fragment.access_token;
     var workspaceId = sessionStorage.getItem('im_workspace_id');
     var database    = sessionStorage.getItem('im_workspace_db');
-
+    var server = sessionStorage.getItem('im_server');
     if (!workspaceId || !database) {
       showError(
         'Session expired',
@@ -151,7 +151,7 @@
       return;
     }
 
-    fetchAndRedirect(token, database, workspaceId);
+    fetchAndRedirect(token, database, workspaceId,server);
 
   // ── PHASE 2 error: OAuth failed ───────────────────────────────────────────
   } else if (fragment.error) {
@@ -172,17 +172,17 @@
 
       var item     = context.selectedItems[0];
       var clientId = context.config.command.client_id;
-
+      var imanageserver = context.config.serverBase;
       // Save workspace details to survive the OAuth redirect
       sessionStorage.setItem('im_workspace_id', item.id);
       sessionStorage.setItem('im_workspace_db',  item.database);
-
+      sessionStorage.setItem('im_server',  imanageserver);
       setLoading('Authenticating…', 'Requesting sign-in token.');
 
       // Request a nonce — this bypasses the iManage login screen entirely
       imanage.requestAuthNonce().then(function (response) {
 
-        var authUrl = IMANAGE_SERVER + '/auth/oauth2/authorize'
+        var authUrl = imanageserver + '/auth/oauth2/authorize'
           + '?response_type=token'
           + '&client_id='    + encodeURIComponent(clientId)
           + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
@@ -211,9 +211,9 @@
   }
 
   // ── Fetch workspace metadata then redirect to Arkivia ─────────────────────
-  function fetchAndRedirect(token, database, workspaceId) {
+  function fetchAndRedirect(token, database, workspaceId,server) {
 
-    var apiUrl = IMANAGE_SERVER + API_PATH
+    var apiUrl = server + API_PATH
       + '/' + encodeURIComponent(database)
       + '/workspaces/'
       + encodeURIComponent(workspaceId);
