@@ -89,17 +89,44 @@
 (function () {
   'use strict';
 
+  // ── Configuration ─────────────────────────────────────────────────────────
+  //
+  // These values are read from the URL query string (set in the YAML url field)
+  // and saved to sessionStorage to survive the OAuth redirect.
+  //
+  // YAML examples:
+  //
+  // Mode A — metadata field contains a matter number, url builds the final URL:
+  //   url: https://your-app.azurestaticapps.net/landing.html
+  //          ?metadata=custom12_description
+  //          &url=https://app.arkivia.se
+  //          &param=matter
+  //   Result: https://app.arkivia.se?matter={value}
+  //
+  // Mode B — metadata field contains the full URL to redirect to:
+  //   url: https://your-app.azurestaticapps.net/landing.html
+  //          ?metadata=custom12_description
+  //   Result: {value}  (used directly as redirect URL)
+  //
+  var urlParams  = new URLSearchParams(window.location.search);
 
-  // ── Configuration ────────────────────────────────────────────────────────
- // var IMANAGE_SERVER = 'https://imanage.ludvig.se';
-  var REDIRECT_URI   = 'https://frnil003.github.io/imanage-extensions/landing.html';
-  var LINK_FIELD     = 'custom12_description';
-  var ARKIVIA_BASE   = '';
-  var ARKIVIA_PARAM  = 'matter';
-  var API_PATH       = '/work/api/v2/customers/1/libraries';
-  // ─────────────────────────────────────────────────────────────────────────
+  var LINK_FIELD = urlParams.get('metadata')
+                || sessionStorage.getItem('im_link_field')
+                || 'custom12_description';
 
-  // ── UI helpers ────────────────────────────────────────────────────────────
+  var BASE_URL   = urlParams.get('url')
+                || sessionStorage.getItem('im_base_url')
+                || '';
+
+  var URL_PARAM  = urlParams.get('param')
+                || sessionStorage.getItem('im_url_param')
+                || 'matter';
+
+  var API_PATH     = '/work/api/v2/customers/1/libraries';
+  var REDIRECT_URI = window.location.origin + window.location.pathname;
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // ── UI helpers ─────────────────────────────────────────────────────────────
   function setLoading(title, detail) {
     document.getElementById('loading-title').textContent  = title  || '';
     document.getElementById('loading-detail').textContent = detail || '';
@@ -114,9 +141,9 @@
     document.getElementById('state-loading').style.display = 'none';
     document.getElementById('state-error').style.display   = '';
   }
-  // ─────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
 
-  // ── Parse URL fragment (#access_token=...&token_type=...) ─────────────────
+  // ── Parse URL fragment (#access_token=...&token_type=...) ──────────────────
   function parseFragment(hash) {
     var params = {};
     hash.replace(/^#/, '').split('&').forEach(function (pair) {
@@ -130,9 +157,10 @@
 
   var fragment = parseFragment(window.location.hash);
 
-  // ── PHASE 2: OAuth returned an access token in the URL fragment ───────────
+  // ── PHASE 2: OAuth returned an access token in the URL fragment ────────────
   if (fragment.access_token) {
 
+    sessionStorage.removeItem('im_oauth_pending');
     setLoading('Looking up workspace…', 'Fetching metadata from iManage.');
 
     // Clean the token from the address bar
@@ -141,7 +169,8 @@
     var token       = fragment.access_token;
     var workspaceId = sessionStorage.getItem('im_workspace_id');
     var database    = sessionStorage.getItem('im_workspace_db');
-    var server = sessionStorage.getItem('im_server');
+    var server      = sessionStorage.getItem('im_server');
+
     if (!workspaceId || !database) {
       showError(
         'Session expired',
@@ -151,35 +180,52 @@
       return;
     }
 
-    fetchAndRedirect(token, database, workspaceId,server);
+    fetchAndRedirect(token, database, workspaceId, server);
 
-  // ── PHASE 2 error: OAuth failed ───────────────────────────────────────────
+  // ── PHASE 2 error: OAuth failed ────────────────────────────────────────────
   } else if (fragment.error) {
 
+    sessionStorage.removeItem('im_oauth_pending');
     showError(
       'Authentication failed',
       'iManage returned: ' + (fragment.error_description || fragment.error),
       'Close this tab and try again.'
     );
 
-  // ── PHASE 1: Page opened from the iManage extension ───────────────────────
+  // ── PHASE 1: Page opened from the iManage extension ────────────────────────
   } else {
+
+    // Loop detection — if we already tried OAuth and came back without a token
+    // it means the redirect_uri did not match or OAuth silently failed
+    if (sessionStorage.getItem('im_oauth_pending')) {
+      sessionStorage.removeItem('im_oauth_pending');
+      showError(
+        'Authentication loop detected',
+        'OAuth redirect completed but no token was returned.',
+        'Check that the Redirect URI in iManage Control Center exactly matches: ' + REDIRECT_URI
+      );
+      return;
+    }
 
     setLoading('Authenticating…', 'Connecting to iManage.');
 
-  
     imanage.ready().then(function (context) {
 
-      var item     = context.selectedItems[0];
-      var clientId = context.config.command.client_id;
+      var item         = context.selectedItems[0];
+      var clientId     = context.config.command.client_id;
       var imanageserver = context.config.serverBase;
-      // Save workspace details to survive the OAuth redirect
+
+      // Save everything to sessionStorage to survive the OAuth redirect
       sessionStorage.setItem('im_workspace_id', item.id);
       sessionStorage.setItem('im_workspace_db',  item.database);
-      sessionStorage.setItem('im_server',  imanageserver);
+      sessionStorage.setItem('im_server',        imanageserver);
+      sessionStorage.setItem('im_link_field',    LINK_FIELD);
+      sessionStorage.setItem('im_base_url',      BASE_URL);
+      sessionStorage.setItem('im_url_param',     URL_PARAM);
+
       setLoading('Authenticating…', 'Requesting sign-in token.');
 
-      // Request a nonce — this bypasses the iManage login screen entirely
+      // Request a nonce — bypasses the iManage login screen entirely
       imanage.requestAuthNonce().then(function (response) {
 
         var authUrl = imanageserver + '/auth/oauth2/authorize'
@@ -189,6 +235,11 @@
           + '&scope=user'
           + '&auth_nonce='   + encodeURIComponent(response.auth_nonce);
 
+        console.log('[Arkivia] REDIRECT_URI:', REDIRECT_URI);
+        console.log('[Arkivia] OAuth URL:', authUrl);
+
+        // Set flag BEFORE redirecting so we can detect a redirect_uri mismatch
+        sessionStorage.setItem('im_oauth_pending', 'true');
         window.location.href = authUrl;
 
       }).catch(function (err) {
@@ -210,16 +261,19 @@
     });
   }
 
-  // ── Fetch workspace metadata then redirect to Arkivia ─────────────────────
-  function fetchAndRedirect(token, database, workspaceId,server) {
+  // ── Fetch workspace metadata then redirect ─────────────────────────────────
+  function fetchAndRedirect(token, database, workspaceId, server) {
 
     var apiUrl = server + API_PATH
       + '/' + encodeURIComponent(database)
       + '/workspaces/'
       + encodeURIComponent(workspaceId);
-  console.log(API_PATH);
-    console.log(apiUrl);
-     console.log(token);
+
+    console.log('[Arkivia] API URL:', apiUrl);
+    console.log('[Arkivia] Token:', token);
+    console.log('[Arkivia] LINK_FIELD:', LINK_FIELD);
+    console.log('[Arkivia] BASE_URL:', BASE_URL);
+
     fetch(apiUrl, {
       headers: {
         'X-Auth-Token' : token,
@@ -247,18 +301,31 @@
       var matter    = workspace[LINK_FIELD];
 
       console.log('[Arkivia] Workspace:', workspace);
+      console.log('[Arkivia] Field "' + LINK_FIELD + '":', matter);
 
       if (!matter || !matter.trim()) {
         showError(
           'No Arkivia link configured',
-          'Workspace "' + (workspace.name || workspaceId) + '" does not have an Arkivia matter number set.',
+          'Workspace "' + (workspace.name || workspaceId) + '" does not have a link configured.',
           'Ask your administrator to populate field: ' + LINK_FIELD
         );
         return;
       }
 
-      setLoading('Opening Arkivia…', 'Redirecting you now.');
-      window.location.href = matter.trim();
+      var targetUrl;
+
+      if (BASE_URL) {
+        // Mode A: BASE_URL set — append metadata value as query parameter
+        var separator = BASE_URL.indexOf('?') !== -1 ? '&' : '?';
+        targetUrl = BASE_URL + separator + URL_PARAM + '=' + encodeURIComponent(matter.trim());
+      } else {
+        // Mode B: No BASE_URL — metadata field contains the full redirect URL
+        targetUrl = matter.trim();
+      }
+
+      console.log('[Arkivia] Redirecting to:', targetUrl);
+      setLoading('Opening…', 'Redirecting you now.');
+      window.location.href = targetUrl;
     })
     .catch(function (err) {
       console.error('[Arkivia] Fetch error:', err);
