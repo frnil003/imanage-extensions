@@ -1,0 +1,10 @@
+obj/
+bin/
+.vs/
+*.user
+appsettings.Development.json
+samkorning.db
+samkorning.db-shm
+samkorning.db-wal
+Samkorning/obj/
+Samkorning/bin/

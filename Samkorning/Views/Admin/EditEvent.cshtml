@@ -1,0 +1,57 @@
+@model Samkorning.Models.CompetitionEvent
+@{
+    ViewData["Title"] = "Redigera match";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <a asp-controller="Admin" asp-action="Index" class="text-muted text-decoration-none">
+            <i class="bi bi-arrow-left me-1"></i>Tillbaka
+        </a>
+        <h3 class="mt-2">Redigera match</h3>
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <form asp-action="EditEvent" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold"></label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Date" class="form-label fw-semibold"></label>
+                        <input asp-for="Date" class="form-control" type="date" />
+                        <span asp-validation-for="Date" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Location" class="form-label fw-semibold"></label>
+                        <input asp-for="Location" class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="RequiredDrivers" class="form-label fw-semibold"></label>
+                        <input asp-for="RequiredDrivers" class="form-control" type="number" min="1" max="20" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Description" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-hk w-100">
+                        <i class="bi bi-check-circle me-2"></i>Spara match
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

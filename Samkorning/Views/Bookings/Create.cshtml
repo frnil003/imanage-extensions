@@ -1,0 +1,118 @@
+@model Samkorning.Models.ViewModels.BookingFormViewModel
+@{
+    ViewData["Title"] = "Anmäl dig";
+    var sv = new System.Globalization.CultureInfo("sv-SE");
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <a asp-controller="Events" asp-action="Details" asp-route-id="@Model.EventId" class="text-muted text-decoration-none">
+            <i class="bi bi-arrow-left me-1"></i>Tillbaka
+        </a>
+        <h3 class="mt-2">Anmäl dig till match</h3>
+        <p class="text-muted">
+            <strong>@Model.EventName</strong> &mdash; @Model.EventDate.ToString("d MMMM yyyy", sv)
+        </p>
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <input type="hidden" asp-for="EventId" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger d-none"></div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Jag vill</label>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="Role" id="roleDriver" value="0"
+                                       @(Model.Role == BookingRole.Driver ? "checked" : "") />
+                                <label class="btn btn-outline-primary w-100 py-3" for="roleDriver">
+                                    <i class="bi bi-car-front-fill d-block fs-3 mb-1"></i>
+                                    Köra
+                                    <small class="d-block text-muted">Jag har bil</small>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="Role" id="rolePassenger" value="1"
+                                       @(Model.Role == BookingRole.Passenger ? "checked" : "") />
+                                <label class="btn btn-outline-secondary w-100 py-3" for="rolePassenger">
+                                    <i class="bi bi-person-fill d-block fs-3 mb-1"></i>
+                                    Åka med
+                                    <small class="d-block text-muted">Jag behöver skjuts</small>
+                                </label>
+                            </div>
+                        </div>
+                        <span asp-validation-for="Role" class="text-danger"></span>
+                    </div>
+
+                    <div id="driverFields" style="display:none">
+                        <div class="mb-3">
+                            <label asp-for="SeatsAvailable" class="form-label fw-semibold"></label>
+                            <input asp-for="SeatsAvailable" class="form-control" type="number" min="2" max="9" />
+                            <div class="form-text">Inkludera dig själv. T.ex. 5 om du har en Volvo V70.</div>
+                            <span asp-validation-for="SeatsAvailable" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="FamilySize" class="form-label fw-semibold"></label>
+                        <input asp-for="FamilySize" class="form-control" type="number" min="1" max="9" />
+                        <div class="form-text">Hur många från er familj åker med?</div>
+                        <span asp-validation-for="FamilySize" class="text-danger"></span>
+                    </div>
+
+                    <div id="passengerFields" style="display:none">
+                        @if (Model.AvailableDrivers.Any())
+                        {
+                            <div class="mb-3">
+                                <label asp-for="PreferredDriverBookingId" class="form-label fw-semibold">
+                                    Föredragen förare (valfritt)
+                                </label>
+                                <select asp-for="PreferredDriverBookingId" class="form-select">
+                                    <option value="">— Ingen preferens, tilldelas av admin —</option>
+                                    @foreach (var d in Model.AvailableDrivers)
+                                    {
+                                        <option value="@d.BookingId">
+                                            @d.FamilyName (@d.AvailableSeats ledig@(d.AvailableSeats == 1 ? "" : "a") plats@(d.AvailableSeats == 1 ? "" : "er"))
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-1"></i>Inga förare anmälda än. Du tilldelas en bil av admin.
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label fw-semibold">Anteckningar (valfritt)</label>
+                        <textarea asp-for="Notes" class="form-control" rows="2"
+                                  placeholder="T.ex. kan hämta i Lugnet, har hockeybag etc."></textarea>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-hk w-100">
+                        <i class="bi bi-check-circle me-2"></i>Skicka anmälan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function updateFields() {
+            const driver = document.getElementById('roleDriver').checked;
+            document.getElementById('driverFields').style.display = driver ? 'block' : 'none';
+            document.getElementById('passengerFields').style.display = driver ? 'none' : 'block';
+        }
+        document.getElementById('roleDriver').addEventListener('change', updateFields);
+        document.getElementById('rolePassenger').addEventListener('change', updateFields);
+        updateFields();
+    </script>
+}

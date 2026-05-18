@@ -1,0 +1,144 @@
+@model Samkorning.Models.ViewModels.EventDetailViewModel
+@{
+    ViewData["Title"] = "Hantera bokningar – " + Model.Event.Name;
+    var sv = new System.Globalization.CultureInfo("sv-SE");
+}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <a asp-controller="Admin" asp-action="Index" class="text-muted text-decoration-none">
+            <i class="bi bi-arrow-left me-1"></i>Admin
+        </a>
+        <h3 class="mt-1">@Model.Event.Name</h3>
+        <p class="text-muted mb-0">@Model.Event.Date.ToString("d MMMM yyyy", sv)</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-controller="Activities" asp-action="Event" asp-route-eventId="@Model.Event.Id"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-clipboard-check me-2"></i>Aktiviteter
+        </a>
+        <a asp-controller="Admin" asp-action="CreateActivity" asp-route-eventId="@Model.Event.Id"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-plus me-1"></i>Ny aktivitet
+        </a>
+        @if (Model.UnassignedPassengers.Any())
+        {
+            <form asp-controller="Admin" asp-action="AutoAssign" method="post">
+                <input type="hidden" name="eventId" value="@Model.Event.Id" />
+                <button type="submit" class="btn btn-hk" onclick="return confirm('Tilldela alla otilldelade passagerare automatiskt?')">
+                    <i class="bi bi-magic me-2"></i>Auto-tilldela
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <h5 class="mb-3">
+            <i class="bi bi-car-front me-2"></i>Förare
+            <span class="badge @(Model.Drivers.Count >= Model.Event.RequiredDrivers ? "bg-success" : "bg-warning text-dark") ms-2">
+                @Model.Drivers.Count / @Model.Event.RequiredDrivers
+            </span>
+        </h5>
+
+        @if (!Model.Drivers.Any())
+        {
+            <div class="alert alert-warning">Inga förare anmälda.</div>
+        }
+
+        @foreach (var d in Model.Drivers)
+        {
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>@d.Driver.User.FamilyName</strong>
+                        <small class="text-muted ms-2">@d.Driver.User.Email</small>
+                        <span class="badge bg-primary ms-2">@d.Driver.SeatsAvailable platser</span>
+                    </div>
+                    <span class="badge @(d.AvailableSeats > 0 ? "bg-success" : "bg-secondary")">
+                        @d.AvailableSeats kvar
+                    </span>
+                </div>
+                @if (d.Passengers.Any())
+                {
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var p in d.Passengers)
+                            {
+                                <tr>
+                                    <td><i class="bi bi-person me-2 text-muted"></i>@p.User.FamilyName</td>
+                                    <td><small class="text-muted">@p.User.Email</small></td>
+                                    <td>x@p.FamilySize</td>
+                                    <td>
+                                        <form asp-controller="Admin" asp-action="AssignPassenger" method="post" class="d-inline">
+                                            <input type="hidden" name="passengerId" value="@p.Id" />
+                                            <input type="hidden" name="driverId" value="0" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-0">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="card-body py-2 text-muted small">Inga passagerare tilldelade än.</div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-4">
+        <h5 class="mb-3">
+            <i class="bi bi-hourglass-split me-2"></i>Otilldelade passagerare
+            @if (Model.UnassignedPassengers.Any())
+            {
+                <span class="badge bg-danger">@Model.UnassignedPassengers.Count</span>
+            }
+        </h5>
+
+        @if (!Model.UnassignedPassengers.Any())
+        {
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle me-2"></i>Alla passagerare är tilldelade!
+            </div>
+        }
+        else
+        {
+            foreach (var p in Model.UnassignedPassengers)
+            {
+                <div class="card mb-2">
+                    <div class="card-body py-2">
+                        <div class="fw-semibold">@p.User.FamilyName <small class="text-muted">(x@p.FamilySize)</small></div>
+                        <small class="text-muted">@p.Notes</small>
+                        @if (Model.Drivers.Any())
+                        {
+                            <form asp-controller="Admin" asp-action="AssignPassenger" method="post" class="mt-2 d-flex gap-2">
+                                <input type="hidden" name="passengerId" value="@p.Id" />
+                                <select name="driverId" class="form-select form-select-sm">
+                                    <option value="0">— Välj förare —</option>
+                                    @foreach (var d in Model.Drivers)
+                                    {
+                                        @if (d.AvailableSeats < p.FamilySize)
+                                        {
+                                            <option value="@d.Driver.Id" disabled>@d.Driver.User.FamilyName (@d.AvailableSeats pl. kvar)</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@d.Driver.Id">@d.Driver.User.FamilyName (@d.AvailableSeats pl. kvar)</option>
+                                        }
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-hk text-nowrap">Tilldela</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

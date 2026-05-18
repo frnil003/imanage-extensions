@@ -1,0 +1,39 @@
+@model Samkorning.Models.ApplicationUser
+@{
+    ViewData["Title"] = "Min profil";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <h3 class="mb-4"><i class="bi bi-person-circle me-2"></i>Min profil</h3>
+
+        <div class="card">
+            <div class="card-body p-4">
+                <form asp-action="Edit" method="post">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Familjenamn</label>
+                        <input name="familyName" value="@Model.FamilyName" class="form-control"
+                               placeholder="T.ex. Familjen Nilsson" required />
+                        <div class="form-text">Visas för alla i matchlistan.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Telefonnummer</label>
+                        <input name="phoneNumber" value="@Model.PhoneNumber" class="form-control"
+                               placeholder="T.ex. 070-123 45 67" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">E-post</label>
+                        <input value="@Model.Email" class="form-control" disabled />
+                        <div class="form-text">E-postadressen ändras via <a asp-area="Identity" asp-page="/Account/Manage/Email">kontoinställningar</a>.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-hk w-100">
+                        <i class="bi bi-check-circle me-2"></i>Spara
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

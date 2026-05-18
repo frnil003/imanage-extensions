@@ -1,0 +1,61 @@
+@model Samkorning.Models.Activity
+@{
+    ViewData["Title"] = "Redigera aktivitet";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <a asp-controller="Admin" asp-action="EventBookings" asp-route-id="@Model.EventId" class="text-muted text-decoration-none">
+            <i class="bi bi-arrow-left me-1"></i>Tillbaka
+        </a>
+        <h3 class="mt-2">Redigera aktivitet</h3>
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <form asp-action="EditActivity" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="EventId" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold"></label>
+                        <input asp-for="Name" class="form-control" list="activity-suggestions" />
+                        <datalist id="activity-suggestions">
+                            <option value="Sekretariat" />
+                            <option value="Kiosk" />
+                            <option value="Plocka fram och undan" />
+                            <option value="Matchvärd" />
+                        </datalist>
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="TimeSlot" class="form-label fw-semibold"></label>
+                        <input asp-for="TimeSlot" class="form-control" />
+                        <span asp-validation-for="TimeSlot" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="MaxParticipants" class="form-label fw-semibold"></label>
+                        <input asp-for="MaxParticipants" class="form-control" type="number" min="1" max="20" />
+                        <span asp-validation-for="MaxParticipants" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Description" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-hk w-100">
+                        <i class="bi bi-check-circle me-2"></i>Spara ändringar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

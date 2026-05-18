@@ -1,0 +1,98 @@
+@model List<Samkorning.Models.CompetitionEvent>
+@{
+    ViewData["Title"] = "Hem";
+    var sv = new System.Globalization.CultureInfo("sv-SE");
+}
+
+<div class="py-4 mb-4" style="background:linear-gradient(135deg,#111 60%,#2a2a2a); border-radius:8px; padding:2rem!important;">
+    <div class="container-fluid">
+        <h1 class="fw-black mb-1" style="color:#f5c400; font-size:2.2rem; letter-spacing:-0.5px">FALU HK F14</h1>
+        <p class="text-white-50 mb-4">Matchplanering, aktiviteter och samkörning</p>
+        @if (!User.Identity!.IsAuthenticated)
+        {
+            <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-hk btn-lg me-3">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Logga in
+            </a>
+            <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-outline-light btn-lg">
+                <i class="bi bi-person-plus me-2"></i>Registrera
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Events" asp-action="Index" class="btn btn-hk btn-lg">
+                <i class="bi bi-calendar-event me-2"></i>Se alla matcher
+            </a>
+        }
+    </div>
+</div>
+
+@if (Model.Any())
+{
+    <h5 class="mb-3 text-muted">Kommande matcher</h5>
+    <div class="row g-3 mb-5">
+        @foreach (var evt in Model)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-event h-100 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-1">@evt.Name</h6>
+                        <p class="text-muted small mb-2">
+                            <i class="bi bi-calendar3 me-1"></i>@evt.Date.ToString("dddd d MMMM yyyy", sv)
+                            @if (!string.IsNullOrEmpty(evt.Location))
+                            {
+                                <span class="ms-2"><i class="bi bi-geo-alt me-1"></i>@evt.Location</span>
+                            }
+                        </p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            @if (evt.Activities.Any())
+                            {
+                                <span class="badge bg-dark">
+                                    <i class="bi bi-clipboard-check me-1"></i>@evt.Activities.Count aktiviteter
+                                </span>
+                            }
+                            @if (evt.Bookings.Any(b => b.Role == BookingRole.Driver))
+                            {
+                                <span class="badge" style="background:#f5c400;color:#111">
+                                    <i class="bi bi-car-front me-1"></i>Samkörning
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <div class="card-footer bg-transparent">
+                            <a asp-controller="Events" asp-action="Details" asp-route-id="@evt.Id"
+                               class="btn btn-sm btn-hk">
+                                Öppna match
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <div class="card feature-card h-100 text-center p-4">
+            <div class="feature-icon mb-3"><i class="bi bi-clipboard-check"></i></div>
+            <h5 class="fw-bold">Aktiviteter</h5>
+            <p class="text-muted small">Sekretariat, kiosk, matchvärd och mer – anmäl dig till uppgifter under matchen.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card feature-card h-100 text-center p-4">
+            <div class="feature-icon mb-3"><i class="bi bi-car-front"></i></div>
+            <h5 class="fw-bold">Samkörning</h5>
+            <p class="text-muted small">Koordinera transport till bortamatcher. Anmäl dig som förare eller passagerare.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card feature-card h-100 text-center p-4">
+            <div class="feature-icon mb-3"><i class="bi bi-bar-chart-line"></i></div>
+            <h5 class="fw-bold">Körningsstatistik</h5>
+            <p class="text-muted small">Varje familj ska köra minst 2 gånger per säsong. Följ hur det går för alla.</p>
+        </div>
+    </div>
+</div>

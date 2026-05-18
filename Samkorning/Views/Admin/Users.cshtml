@@ -1,0 +1,71 @@
+@model List<Samkorning.Models.ViewModels.UserRoleRow>
+@{
+    ViewData["Title"] = "Hantera användare";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a asp-controller="Admin" asp-action="Index" class="text-muted text-decoration-none">
+            <i class="bi bi-arrow-left me-1"></i>Admin
+        </a>
+        <h3 class="mt-1">Hantera användare</h3>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Familj</th>
+                    <th>E-post</th>
+                    <th class="text-center">Roll</th>
+                    <th class="text-center">Ändra</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@u.FamilyName</td>
+                        <td class="text-muted">@u.Email</td>
+                        <td class="text-center">
+                            @if (u.IsAdmin)
+                            {
+                                <span class="badge bg-danger">Admin</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Användare</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (u.IsAdmin)
+                            {
+                                <form asp-action="SetAdmin" method="post">
+                                    <input type="hidden" name="userId" value="@u.UserId" />
+                                    <input type="hidden" name="isAdmin" value="false" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Ta bort adminrollen för @u.FamilyName?')">
+                                        <i class="bi bi-shield-x me-1"></i>Ta bort admin
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="SetAdmin" method="post">
+                                    <input type="hidden" name="userId" value="@u.UserId" />
+                                    <input type="hidden" name="isAdmin" value="true" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success"
+                                            onclick="return confirm('Gör @u.FamilyName till admin?')">
+                                        <i class="bi bi-shield-check me-1"></i>Gör till admin
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

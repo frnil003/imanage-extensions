@@ -1,0 +1,165 @@
+@model Samkorning.Models.ViewModels.SummaryViewModel
+@{
+    ViewData["Title"] = "Körstatistik " + Model.Year;
+    var sv = new System.Globalization.CultureInfo("sv-SE");
+    int met = Model.Rows.Count(r => r.MetObligation);
+    int total = Model.Rows.Count;
+    var myRow = Model.Rows.FirstOrDefault(r => r.UserId == Model.CurrentUserId);
+}
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+    <div>
+        <h2><i class="bi bi-bar-chart-line me-2"></i>Körstatistik</h2>
+        <p class="text-muted mb-0">
+            Varje familj ska ha kört minst <strong>@Model.MinDriverObligation gånger</strong> under året.
+        </p>
+    </div>
+
+    @if (Model.AvailableYears.Count > 1)
+    {
+        <div class="btn-group" role="group">
+            @foreach (var y in Model.AvailableYears)
+            {
+                <a asp-action="Summary" asp-route-year="@y"
+                   class="btn @(y == Model.Year ? "btn-hk" : "btn-outline-secondary")">
+                    @y
+                </a>
+            }
+        </div>
+    }
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <div class="fs-2 fw-bold" style="color:#003366">@total</div>
+                <div class="text-muted small">Familjer totalt</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <div class="fs-2 fw-bold text-success">@met</div>
+                <div class="text-muted small">Uppfyllt kravet</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <div class="fs-2 fw-bold text-danger">@(total - met)</div>
+                <div class="text-muted small">Ej uppfyllt</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <div class="fs-2 fw-bold" style="color:#003366">
+                    @Model.Rows.Sum(r => r.DriverCount)
+                </div>
+                <div class="text-muted small">Körningar totalt</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!Model.Rows.Any())
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>Inga familjer registrerade ännu.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Familj</th>
+                    <th class="text-center">Körningar @Model.Year</th>
+                    <th class="text-center">Krav (@Model.MinDriverObligation)</th>
+                    <th>Matcher körda</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int rank = 0; }
+                @foreach (var row in Model.Rows)
+                {
+                    rank++;
+                    bool isMe = row.UserId == Model.CurrentUserId;
+                    <tr class="@(isMe ? "table-primary fw-semibold" : "")">
+                        <td class="text-muted">@rank</td>
+                        <td>
+                            @row.FamilyName
+                            @if (isMe)
+                            {
+                                <span class="badge bg-primary ms-2">Du</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <span class="fs-5 fw-bold @(row.MetObligation ? "text-success" : (row.DriverCount > 0 ? "text-warning" : "text-danger"))">
+                                @row.DriverCount
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            @if (row.MetObligation)
+                            {
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Klart
+                                </span>
+                            }
+                            else
+                            {
+                                int remaining = Model.MinDriverObligation - row.DriverCount;
+                                <span class="badge @(row.DriverCount > 0 ? "bg-warning text-dark" : "bg-danger") fs-6">
+                                    <i class="bi bi-exclamation-circle me-1"></i>@remaining till
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            @if (row.DrivenEvents.Any())
+                            {
+                                <div class="d-flex flex-wrap gap-1">
+                                    @foreach (var e in row.DrivenEvents)
+                                    {
+                                        <span class="badge bg-light text-dark border" title="@e.Date.ToString("d MMM yyyy", sv)">
+                                            <i class="bi bi-car-front me-1"></i>@e.EventName
+                                            <small class="text-muted ms-1">@e.Date.ToString("d/M", sv)</small>
+                                        </span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic small">Ingen körning registrerad</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (myRow != null && !myRow.MetObligation)
+    {
+        int left = Model.MinDriverObligation - myRow.DriverCount;
+        <div class="alert alert-warning mt-3">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Du har kört <strong>@myRow.DriverCount</strong> av @Model.MinDriverObligation gånger under @Model.Year.
+            Du behöver anmäla dig som förare vid ytterligare <strong>@left tillfälle@(left == 1 ? "" : "n")</strong>.
+            <a asp-controller="Events" asp-action="Index" class="alert-link ms-2">Se kommande matcher →</a>
+        </div>
+    }
+    else if (myRow != null && myRow.MetObligation)
+    {
+        <div class="alert alert-success mt-3">
+            <i class="bi bi-check-circle me-2"></i>
+            Bra jobbat! Du har uppfyllt körningskravet för @Model.Year
+            (@myRow.DriverCount av @Model.MinDriverObligation körningar).
+        </div>
+    }
+}

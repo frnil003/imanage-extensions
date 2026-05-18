@@ -1,0 +1,127 @@
+@model Samkorning.Models.ViewModels.EventDetailViewModel
+@{
+    ViewData["Title"] = "Samkörning – " + Model.Event.Name;
+    var sv = new System.Globalization.CultureInfo("sv-SE");
+}
+
+<a asp-controller="Events" asp-action="Details" asp-route-id="@Model.Event.Id" class="text-muted text-decoration-none">
+    <i class="bi bi-arrow-left me-1"></i>Tillbaka till matchen
+</a>
+
+<div class="d-flex justify-content-between align-items-start mt-2 mb-4">
+    <div>
+        <h2 class="fw-black mb-1"><i class="bi bi-car-front me-2" style="color:#f5c400"></i>Samkörning</h2>
+        <p class="text-muted mb-0">
+            <strong>@Model.Event.Name</strong> &mdash; @Model.Event.Date.ToString("d MMMM yyyy", sv)
+        </p>
+    </div>
+    <div class="text-end">
+        <div class="fs-5 fw-bold @(Model.Event.IsFull ? "text-success" : "text-warning")">
+            <i class="bi bi-car-front me-1"></i>@Model.Event.DriverCount / @Model.Event.RequiredDrivers förare
+        </div>
+        @if (!Model.Event.IsFull)
+        {
+            <small class="text-muted">Behöver @(Model.Event.RequiredDrivers - Model.Event.DriverCount) till</small>
+        }
+    </div>
+</div>
+
+@if (Model.MyBooking == null && Model.Event.IsUpcoming)
+{
+    <div class="alert d-flex justify-content-between align-items-center" style="background:#fff9e6;border-left:4px solid #f5c400">
+        <span><i class="bi bi-info-circle me-2"></i>Du är inte anmäld till samkörningen.</span>
+        <a asp-controller="Bookings" asp-action="Create" asp-route-eventId="@Model.Event.Id" class="btn btn-hk btn-sm">
+            <i class="bi bi-plus-circle me-1"></i>Anmäl dig
+        </a>
+    </div>
+}
+else if (Model.MyBooking != null)
+{
+    <div class="alert d-flex justify-content-between align-items-center" style="background:#f0f0f0;border-left:4px solid #111">
+        <span>
+            <i class="bi @(Model.MyBooking.Role == BookingRole.Driver ? "bi-car-front-fill" : "bi-person-fill") me-2"></i>
+            Du är anmäld som <strong>@(Model.MyBooking.Role == BookingRole.Driver ? "förare" : "passagerare")</strong>
+            @if (Model.MyBooking.Role == BookingRole.Driver)
+            {
+                <span>med @Model.MyBooking.SeatsAvailable platser</span>
+            }
+        </span>
+        <div class="d-flex gap-2">
+            <a asp-controller="Bookings" asp-action="Edit" asp-route-id="@Model.MyBooking.Id" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil me-1"></i>Ändra
+            </a>
+            <form asp-controller="Bookings" asp-action="Delete" method="post" onsubmit="return confirm('Ta bort din anmälan?')">
+                <input type="hidden" name="id" value="@Model.MyBooking.Id" />
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash me-1"></i>Ta bort
+                </button>
+            </form>
+        </div>
+    </div>
+}
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-8">
+        <h5 class="mb-3"><i class="bi bi-car-front me-2"></i>Förare & passagerare</h5>
+
+        @if (!Model.Drivers.Any())
+        {
+            <div class="alert" style="background:#fff9e6;border-left:4px solid #f5c400">
+                <i class="bi bi-exclamation-triangle me-2"></i>Inga förare anmälda än. Var den första!
+            </div>
+        }
+
+        @foreach (var d in Model.Drivers)
+        {
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background:#f8f8f8">
+                    <div>
+                        <span class="badge bg-dark me-2">Förare</span>
+                        <strong>@d.Driver.User.FamilyName</strong>
+                        <small class="text-muted ms-2">@d.Driver.SeatsAvailable platser totalt</small>
+                    </div>
+                    <span class="badge @(d.AvailableSeats > 0 ? "bg-success" : "bg-secondary")">
+                        @d.AvailableSeats ledig@(d.AvailableSeats == 1 ? "" : "a") plats@(d.AvailableSeats == 1 ? "" : "er")
+                    </span>
+                </div>
+                @if (d.Driver.Notes != null)
+                {
+                    <div class="px-3 py-2 border-bottom">
+                        <small class="text-muted"><i class="bi bi-chat-left-text me-1"></i>@d.Driver.Notes</small>
+                    </div>
+                }
+                @if (d.Passengers.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var p in d.Passengers)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                <span>
+                                    <i class="bi bi-person me-2 text-muted"></i>@p.User.FamilyName
+                                    @if (p.FamilySize > 1) { <small class="text-muted">(x@p.FamilySize)</small> }
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
+    </div>
+
+    @if (Model.UnassignedPassengers.Any())
+    {
+        <div class="col-lg-4">
+            <h5 class="mb-3"><i class="bi bi-hourglass-split me-2"></i>Väntar på tilldelning</h5>
+            <div class="list-group">
+                @foreach (var p in Model.UnassignedPassengers)
+                {
+                    <div class="list-group-item">
+                        <i class="bi bi-person me-2 text-muted"></i>@p.User.FamilyName
+                        @if (p.FamilySize > 1) { <small class="text-muted">(x@p.FamilySize)</small> }
+                    </div>
+                }
+            </div>
+            <small class="text-muted mt-2 d-block">Admin tilldelar bilar.</small>
+        </div>
+    }
+</div>

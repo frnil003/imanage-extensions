@@ -1,0 +1,100 @@
+@model List<Samkorning.Models.CompetitionEvent>
+@{
+    ViewData["Title"] = "Matcher";
+    var sv = new System.Globalization.CultureInfo("sv-SE");
+    var upcoming = Model.Where(e => e.Date >= DateTime.Today).ToList();
+    var past = Model.Where(e => e.Date < DateTime.Today).ToList();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-calendar-event me-2"></i>Matcher</h2>
+</div>
+
+@if (!upcoming.Any() && !past.Any())
+{
+    <div class="alert alert-info">Inga matcher inlagda ännu.</div>
+}
+
+@if (upcoming.Any())
+{
+    <h5 class="text-muted mb-3">Kommande</h5>
+    <div class="list-group mb-4">
+        @foreach (var evt in upcoming)
+        {
+            bool activitiesFull = evt.Activities.Any() &&
+                evt.Activities.All(a => a.Signups.Count >= a.MaxParticipants);
+            bool activitiesPartial = evt.Activities.Any() && !activitiesFull;
+            bool carpoolingFull = evt.Bookings.Any() && evt.IsFull;
+            bool carpoolingPartial = evt.Bookings.Any(b => b.Role == BookingRole.Driver) && !carpoolingFull;
+
+            <a asp-controller="Events" asp-action="Details" asp-route-id="@evt.Id"
+               class="list-group-item list-group-item-action py-3">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1 fw-semibold">@evt.Name</h6>
+                        <small class="text-muted">
+                            <i class="bi bi-calendar3 me-1"></i>@evt.Date.ToString("dddd d MMMM yyyy", sv)
+                            @if (!string.IsNullOrEmpty(evt.Location))
+                            {
+                                <span class="ms-3"><i class="bi bi-geo-alt me-1"></i>@evt.Location</span>
+                            }
+                        </small>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted ms-3 mt-1"></i>
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap mt-2">
+                    @if (evt.Activities.Any())
+                    {
+                        int filledSlots = evt.Activities.Sum(a => a.Signups.Count);
+                        int totalSlots = evt.Activities.Sum(a => a.MaxParticipants);
+                        <span class="badge @(activitiesFull ? "bg-success" : (activitiesPartial ? "bg-warning text-dark" : "bg-warning text-dark"))">
+                            <i class="bi bi-clipboard-check me-1"></i>Aktiviteter @filledSlots / @totalSlots
+                            @if (activitiesFull) { <i class="bi bi-check-circle ms-1"></i> }
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-light text-muted border">
+                            <i class="bi bi-clipboard me-1"></i>Inga aktiviteter
+                        </span>
+                    }
+
+                    @if (evt.Bookings.Any(b => b.Role == BookingRole.Driver))
+                    {
+                        <span class="badge @(carpoolingFull ? "bg-success" : "bg-warning text-dark")">
+                            <i class="bi bi-car-front me-1"></i>Samkörning @evt.DriverCount / @evt.RequiredDrivers
+                            @if (carpoolingFull) { <i class="bi bi-check-circle ms-1"></i> }
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-light text-muted border">
+                            <i class="bi bi-car-front me-1"></i>Ingen samkörning
+                        </span>
+                    }
+                </div>
+            </a>
+        }
+    </div>
+}
+
+@if (past.Any())
+{
+    <h5 class="text-muted mb-3">Genomförda matcher</h5>
+    <div class="list-group opacity-75">
+        @foreach (var evt in past)
+        {
+            <a asp-controller="Events" asp-action="Details" asp-route-id="@evt.Id"
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                <div>
+                    <h6 class="mb-1">@evt.Name</h6>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar3 me-1"></i>@evt.Date.ToString("d MMMM yyyy", sv)
+                    </small>
+                </div>
+                <span class="badge bg-secondary">Genomförd</span>
+            </a>
+        }
+    </div>
+}
